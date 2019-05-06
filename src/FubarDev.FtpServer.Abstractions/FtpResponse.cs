@@ -42,16 +42,14 @@ namespace FubarDev.FtpServer
         /// <inheritdoc />
         public int Code { get; }
 
+        /// <inheritdoc />
+        public bool PauseConnection { get; set; }
+
         /// <summary>
-        /// Gets the response message.
+        /// Ges or sets a value indicating whether the connection should be paused.
         /// </summary>
         [CanBeNull]
         public string Message { get; }
-
-        /// <summary>
-        /// Gets or sets the async action to execute after sending the response to the client.
-        /// </summary>
-        public Func<IFtpConnection, CancellationToken, Task> AfterWriteAction { get; set; }
 
         /// <inheritdoc/>
         public override string ToString()

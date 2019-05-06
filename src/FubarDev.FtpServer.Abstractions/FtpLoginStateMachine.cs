@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FubarDev.FtpServer.Authentication;
 using FubarDev.FtpServer.Authorization;
+using FubarDev.FtpServer.Features;
+
 using JetBrains.Annotations;
 
 namespace FubarDev.FtpServer
@@ -67,9 +69,9 @@ namespace FubarDev.FtpServer
         /// <param name="connection">The FTP connection.</param>
         /// <param name="hostSelector">The FTP host selector.</param>
         public FtpLoginStateMachine(
-            [NotNull] IFtpConnection connection,
+            [NotNull] ILocalizationFeature localizationFeature,
             [NotNull] IFtpHostSelector hostSelector)
-            : base(connection, _transitions, SecurityStatus.Unauthenticated)
+            : base(localizationFeature, _transitions, SecurityStatus.Unauthenticated)
         {
             _hostSelector = hostSelector;
         }

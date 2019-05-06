@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+
+using JetBrains.Annotations;
 
 namespace FubarDev.FtpServer
 {
@@ -25,7 +28,7 @@ namespace FubarDev.FtpServer
         /// <exception cref="ArgumentOutOfRangeException">The chosen port was not within the configured range of ports.</exception>
         /// <returns>A TcpListener.</returns>
         Task<IPasvListener> CreateTcpListenerAsync(
-            IFtpConnection connection,
+            [NotNull] IPAddress localAddress,
             int port = 0,
             CancellationToken cancellationToken = default);
     }

@@ -24,8 +24,8 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
         public PassCommandHandler(
-            [NotNull] IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "PASS")
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "PASS")
         {
         }
 

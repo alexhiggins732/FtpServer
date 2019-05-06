@@ -22,8 +22,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="HostCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The FTP connection accessor.</param>
-        public HostCommandHandler([NotNull] IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "HOST")
+        public HostCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "HOST")
         {
         }
 

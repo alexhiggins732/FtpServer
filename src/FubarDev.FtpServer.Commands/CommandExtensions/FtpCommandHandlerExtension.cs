@@ -17,7 +17,7 @@ namespace FubarDev.FtpServer.CommandExtensions
     public abstract class FtpCommandHandlerExtension : IFtpCommandHandlerExtension
     {
         [NotNull]
-        private readonly IFtpConnectionAccessor _connectionAccessor;
+        private readonly IFtpContextAccessor _ftpContextAccessor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FtpCommandHandlerExtension"/> class.
@@ -26,9 +26,13 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// <param name="extensionFor">The name of the command this extension is for.</param>
         /// <param name="name">The command name.</param>
         /// <param name="alternativeNames">Alternative names.</param>
-        protected FtpCommandHandlerExtension([NotNull] IFtpConnectionAccessor connectionAccessor, [NotNull] string extensionFor, [NotNull] string name, [NotNull, ItemNotNull] params string[] alternativeNames)
+        protected FtpCommandHandlerExtension(
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
+            [NotNull] string extensionFor,
+            [NotNull] string name,
+            [NotNull, ItemNotNull] params string[] alternativeNames)
         {
-            _connectionAccessor = connectionAccessor;
+            _ftpContextAccessor = ftpContextAccessor;
             var names = new List<string>
             {
                 name,
@@ -42,6 +46,11 @@ namespace FubarDev.FtpServer.CommandExtensions
         public IReadOnlyCollection<string> Names { get; }
 
         /// <inheritdoc />
+        public FtpContext FtpContext
+            => _ftpContextAccessor.FtpContext
+               ?? throw new InvalidOperationException("The connection information was used outside of an active connection.");
+
+        /// <inheritdoc />
         public virtual bool? IsLoginRequired { get; set; }
 
         /// <inheritdoc />
@@ -51,18 +60,6 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// Gets or sets the extension announcement mode.
         /// </summary>
         public ExtensionAnnouncementMode AnnouncementMode { get; set; } = ExtensionAnnouncementMode.Hidden;
-
-        /// <summary>
-        /// Gets the connection this command was created for.
-        /// </summary>
-        [NotNull]
-        protected IFtpConnection Connection => _connectionAccessor.FtpConnection ?? throw new InvalidOperationException("The connection information was used outside of an active connection.");
-
-        /// <summary>
-        /// Gets the connection data.
-        /// </summary>
-        [NotNull]
-        protected FtpConnectionData Data => Connection.Data;
 
         /// <inheritdoc />
         public abstract void InitializeConnectionData();
@@ -77,7 +74,7 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// <returns>The translated message.</returns>
         protected string T(string message)
         {
-            return Connection.Data.Catalog.GetString(message);
+            return FtpContext.State.Catalog.GetString(message);
         }
 
         /// <summary>
@@ -89,7 +86,7 @@ namespace FubarDev.FtpServer.CommandExtensions
         [StringFormatMethod("message")]
         protected string T(string message, params object[] args)
         {
-            return Connection.Data.Catalog.GetString(message, args);
+            return FtpContext.State.Catalog.GetString(message, args);
         }
     }
 }

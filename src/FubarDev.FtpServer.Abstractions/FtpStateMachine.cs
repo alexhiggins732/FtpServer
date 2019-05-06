@@ -8,6 +8,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using FubarDev.FtpServer.Features;
+
 using JetBrains.Annotations;
 
 namespace FubarDev.FtpServer
@@ -21,6 +23,8 @@ namespace FubarDev.FtpServer
     {
         private readonly IReadOnlyDictionary<TStatus, IReadOnlyCollection<Transition>> _transitions;
 
+        [NotNull]
+        private readonly ILocalizationFeature _localizationFeature;
         private readonly TStatus _initialStatus;
 
         [NotNull]
@@ -34,11 +38,11 @@ namespace FubarDev.FtpServer
         /// <param name="transitions">The supported transitions.</param>
         /// <param name="initialStatus">The initial status.</param>
         protected FtpStateMachine(
-            [NotNull] IFtpConnection connection,
+            [NotNull] ILocalizationFeature localizationFeature,
             [NotNull, ItemNotNull] IEnumerable<Transition> transitions,
             TStatus initialStatus)
         {
-            Connection = connection;
+            _localizationFeature = localizationFeature;
             _initialStatus = initialStatus;
             _transitions = transitions
                 .ToLookup(x => x.Source)
@@ -51,12 +55,6 @@ namespace FubarDev.FtpServer
         /// Gets the current status.
         /// </summary>
         public TStatus Status { get; private set; }
-
-        /// <summary>
-        /// Gets the connection this state machine belongs to.
-        /// </summary>
-        [NotNull]
-        public IFtpConnection Connection { get; }
 
         /// <summary>
         /// Resets the state machine to the initial status.
@@ -159,7 +157,7 @@ namespace FubarDev.FtpServer
         /// <returns>The translated message.</returns>
         protected string T(string message)
         {
-            return Connection.Data.Catalog.GetString(message);
+            return _localizationFeature.Catalog.GetString(message);
         }
 
         /// <summary>
@@ -171,7 +169,7 @@ namespace FubarDev.FtpServer
         [StringFormatMethod("message")]
         protected string T(string message, params object[] args)
         {
-            return Connection.Data.Catalog.GetString(message, args);
+            return _localizationFeature.Catalog.GetString(message, args);
         }
 
         /// <summary>

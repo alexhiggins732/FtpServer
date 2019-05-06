@@ -20,17 +20,17 @@ namespace FubarDev.FtpServer.CommandHandlers
     /// </summary>
     public abstract class FtpCommandHandler : IFtpCommandHandler
     {
-        private readonly IFtpConnectionAccessor _connectionAccessor;
+        private readonly IFtpContextAccessor _ftpContextAccessor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FtpCommandHandler"/> class.
         /// </summary>
-        /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
+        /// <param name="ftpContextAccessor">The accessor to get the context that is active during the <see cref="Process"/> method execution.</param>
         /// <param name="name">The command name.</param>
         /// <param name="alternativeNames">Alternative names.</param>
-        protected FtpCommandHandler([NotNull] IFtpConnectionAccessor connectionAccessor, [NotNull] string name, [NotNull, ItemNotNull] params string[] alternativeNames)
+        protected FtpCommandHandler([NotNull] IFtpContextAccessor ftpContextAccessor, [NotNull] string name, [NotNull, ItemNotNull] params string[] alternativeNames)
         {
-            _connectionAccessor = connectionAccessor;
+            _ftpContextAccessor = ftpContextAccessor;
             var names = new List<string>
             {
                 name,
@@ -43,16 +43,16 @@ namespace FubarDev.FtpServer.CommandHandlers
         public IReadOnlyCollection<string> Names { get; }
 
         /// <inheritdoc />
+        public FtpContext FtpContext
+            => _ftpContextAccessor.FtpContext
+               ?? throw new InvalidOperationException(
+                   "The FTP context was used outside of an active connection.");
+
+        /// <inheritdoc />
         public virtual bool IsLoginRequired => true;
 
         /// <inheritdoc />
         public virtual bool IsAbortable => false;
-
-        /// <summary>
-        /// Gets the connection this command was created for.
-        /// </summary>
-        [NotNull]
-        protected IFtpConnection Connection => _connectionAccessor.FtpConnection ?? throw new InvalidOperationException("The connection information was used outside of an active connection.");
 
         /// <summary>
         /// Gets the connection data.
@@ -82,7 +82,7 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// <returns>The translated message.</returns>
         protected string T(string message)
         {
-            return Connection.Data.Catalog.GetString(message);
+            return FtpContext.State.Catalog.GetString(message);
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace FubarDev.FtpServer.CommandHandlers
         [StringFormatMethod("message")]
         protected string T(string message, params object[] args)
         {
-            return Connection.Data.Catalog.GetString(message, args);
+            return FtpContext.State.Catalog.GetString(message, args);
         }
     }
 }

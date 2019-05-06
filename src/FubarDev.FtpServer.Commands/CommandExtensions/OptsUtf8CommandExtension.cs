@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using FubarDev.FtpServer.Features;
+
 using JetBrains.Annotations;
 
 namespace FubarDev.FtpServer.CommandExtensions
@@ -19,8 +21,9 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// Initializes a new instance of the <see cref="OptsUtf8CommandExtension"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
-        public OptsUtf8CommandExtension([NotNull] IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "OPTS", "UTF8", "UTF-8")
+        public OptsUtf8CommandExtension(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "OPTS", "UTF8", "UTF-8")
         {
             // Announce it as UTF8 only.
             AnnouncementMode = ExtensionAnnouncementMode.ExtensionName;
@@ -37,16 +40,23 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// <inheritdoc />
         public override Task<IFtpResponse> Process(FtpCommand command, CancellationToken cancellationToken)
         {
+            var nlstFeature = FtpContext.State.Features.Get<INlstFeature>();
+            if (nlstFeature == null)
+            {
+                nlstFeature = new NlstFeature();
+                FtpContext.State.Features.Set(nlstFeature);
+            }
+
             switch (command.Argument.ToUpperInvariant())
             {
                 case "ON":
-                    Connection.Encoding = Encoding.UTF8;
+                    FtpContext.State.Features.Get<IConnectionFeature>().Encoding = Encoding.UTF8;
                     break;
                 case "":
-                    Connection.Data.NlstEncoding = null;
+                    nlstFeature.Encoding = null;
                     break;
                 case "NLST":
-                    Connection.Data.NlstEncoding = Encoding.UTF8;
+                    nlstFeature.Encoding = Encoding.UTF8;
                     break;
                 default:
                     return Task.FromResult<IFtpResponse>(new FtpResponse(501, T("Syntax error in parameters or arguments.")));

@@ -44,10 +44,10 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// <param name="sslStreamWrapperFactory">An object to handle SSL streams.</param>
         /// <param name="logger">The logger.</param>
         public ListCommandHandler(
-            [NotNull] IFtpConnectionAccessor connectionAccessor,
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
             [NotNull] ISslStreamWrapperFactory sslStreamWrapperFactory,
             [CanBeNull] ILogger<ListCommandHandler> logger = null)
-            : base(connectionAccessor, "LIST", "NLST", "LS")
+            : base(ftpContextAccessor, "LIST", "NLST", "LS")
         {
             _sslStreamWrapperFactory = sslStreamWrapperFactory;
             _logger = logger;

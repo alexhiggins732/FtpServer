@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using JetBrains.Annotations;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FubarDev.FtpServer.CommandHandlers
@@ -20,8 +22,8 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="AuthCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
-        public AuthCommandHandler(IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "AUTH")
+        public AuthCommandHandler([NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "AUTH")
         {
         }
 

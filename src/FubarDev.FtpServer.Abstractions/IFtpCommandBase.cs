@@ -23,6 +23,12 @@ namespace FubarDev.FtpServer
         IReadOnlyCollection<string> Names { get; }
 
         /// <summary>
+        /// Gets or sets the FTP context.
+        /// </summary>
+        [NotNull]
+        FtpContext FtpContext { get; }
+
+        /// <summary>
         /// Processes the command.
         /// </summary>
         /// <param name="command">The command to process.</param>

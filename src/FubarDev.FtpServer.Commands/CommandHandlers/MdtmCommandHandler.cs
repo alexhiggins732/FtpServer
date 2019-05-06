@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 
 using FubarDev.FtpServer.FileSystem;
 
+using JetBrains.Annotations;
+
 namespace FubarDev.FtpServer.CommandHandlers
 {
     /// <summary>
@@ -22,8 +24,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="MdtmCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
-        public MdtmCommandHandler(IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "MDTM")
+        public MdtmCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "MDTM")
         {
         }
 

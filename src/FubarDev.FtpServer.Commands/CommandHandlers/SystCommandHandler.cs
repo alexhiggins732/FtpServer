@@ -8,6 +8,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using JetBrains.Annotations;
+
 using Microsoft.Extensions.Options;
 
 namespace FubarDev.FtpServer.CommandHandlers
@@ -24,8 +26,10 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
         /// <param name="options">Options for the SYST command.</param>
-        public SystCommandHandler(IFtpConnectionAccessor connectionAccessor, IOptions<SystCommandOptions> options)
-            : base(connectionAccessor, "SYST")
+        public SystCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
+            [NotNull] IOptions<SystCommandOptions> options)
+            : base(ftpContextAccessor, "SYST")
         {
             _operatingSystem = options.Value.OperatingSystem ?? "UNIX";
         }

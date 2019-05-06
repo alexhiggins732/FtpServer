@@ -2,6 +2,7 @@
 // Copyright (c) Fubar Development Junker. All rights reserved.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 
 using FubarDev.FtpServer.Authentication;
 using FubarDev.FtpServer.BackgroundTransfer;
+using FubarDev.FtpServer.Features;
 
 using JetBrains.Annotations;
 
@@ -29,6 +31,9 @@ namespace FubarDev.FtpServer.CommandExtensions
         [NotNull]
         private readonly ISslStreamWrapperFactory _sslStreamWrapperFactory;
 
+        [NotNull]
+        private readonly IFtpDataConnectionHost _dataConnectionHost;
+
         [CanBeNull]
         private readonly ILogger<SiteBlstCommandExtension> _logger;
 
@@ -40,14 +45,16 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// <param name="sslStreamWrapperFactory">An object to handle SSL streams.</param>
         /// <param name="logger">The logger.</param>
         public SiteBlstCommandExtension(
-            [NotNull] IFtpConnectionAccessor connectionAccessor,
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
             [NotNull] IBackgroundTransferWorker backgroundTransferWorker,
             [NotNull] ISslStreamWrapperFactory sslStreamWrapperFactory,
+            [NotNull] IFtpDataConnectionHost dataConnectionHost,
             [CanBeNull] ILogger<SiteBlstCommandExtension> logger = null)
-            : base(connectionAccessor, "SITE", "BLST")
+            : base(ftpContextAccessor, "SITE", "BLST")
         {
             _backgroundTransferWorker = backgroundTransferWorker;
             _sslStreamWrapperFactory = sslStreamWrapperFactory;
+            _dataConnectionHost = dataConnectionHost;
             _logger = logger;
             AnnouncementMode = ExtensionAnnouncementMode.CommandAndExtensionName;
         }
@@ -95,20 +102,38 @@ namespace FubarDev.FtpServer.CommandExtensions
 
         private async Task<IFtpResponse> SendBlstWithDataConnection(CancellationToken cancellationToken)
         {
-            await Connection.WriteAsync(new FtpResponse(150, T("Opening data connection.")), cancellationToken).ConfigureAwait(false);
+            await FtpContext.ResponseWriter.WriteAsync(
+                    new FtpResponse(150, T("Opening data connection.")),
+                    cancellationToken)
+               .ConfigureAwait(false);
 
-            return await Connection.SendResponseAsync(
-                ExecuteSend,
-                ex =>
+            var tlsConnectionFeature = FtpContext.State.Features.Get<ITlsConnectionFeature>();
+
+            using (var client = await _dataConnectionHost
+               .OpenDataConnectionAsync(TimeSpan.FromSeconds(5), cancellationToken)
+               .ConfigureAwait(false))
+            {
+                var stream = client.GetStream();
+                if (tlsConnectionFeature.IsTlsEnabled)
                 {
-                    _logger?.LogError(ex, ex.Message);
-                    return new FtpResponse(425, T("Can't open data connection."));
-                }).ConfigureAwait(false);
+                    stream = await _sslStreamWrapperFactory.WrapStreamAsync(stream, )
+                }
+            }
+
+                return await Connection.SendResponseAsync(
+                    ExecuteSend,
+                    ex =>
+                    {
+                        _logger?.LogError(ex, ex.Message);
+                        return new FtpResponse(425, T("Can't open data connection."));
+                    }).ConfigureAwait(false);
         }
 
         private async Task<IFtpResponse> ExecuteSend(TcpClient responseSocket)
         {
-            var encoding = Data.NlstEncoding ?? Connection.Encoding;
+            var nlstFeature = FtpContext.State.Features.Get<INlstFeature>();
+            var connectionFeature = FtpContext.State.Features.Get<IConnectionFeature>();
+            var encoding = nlstFeature?.Encoding ?? connectionFeature.Encoding;
             var responseStream = responseSocket.GetStream();
             using (var stream = await Connection.CreateEncryptedStream(responseStream).ConfigureAwait(false))
             {

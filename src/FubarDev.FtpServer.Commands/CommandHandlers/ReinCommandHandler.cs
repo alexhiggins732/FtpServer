@@ -20,8 +20,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="ReinCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The FTP connection accessor.</param>
-        public ReinCommandHandler([NotNull] IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "REIN")
+        public ReinCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "REIN")
         {
         }
 

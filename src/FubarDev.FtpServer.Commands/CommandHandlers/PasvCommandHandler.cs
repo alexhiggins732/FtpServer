@@ -23,6 +23,7 @@ namespace FubarDev.FtpServer.CommandHandlers
     /// </summary>
     public class PasvCommandHandler : FtpCommandHandler
     {
+        [NotNull]
         private readonly IPasvListenerFactory _pasvListenerFactory;
 
         /// <summary>
@@ -30,8 +31,10 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
         /// <param name="pasvListenerFactory">The provider for passive ports.</param>
-        public PasvCommandHandler([NotNull] IFtpConnectionAccessor connectionAccessor, IPasvListenerFactory pasvListenerFactory)
-            : base(connectionAccessor, "PASV", "EPSV")
+        public PasvCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
+            [NotNull] IPasvListenerFactory pasvListenerFactory)
+            : base(ftpContextAccessor, "PASV", "EPSV")
         {
             _pasvListenerFactory = pasvListenerFactory;
         }

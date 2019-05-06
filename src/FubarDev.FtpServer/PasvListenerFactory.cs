@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +40,7 @@ namespace FubarDev.FtpServer
 
         /// <inheritdoc />
         public async Task<IPasvListener> CreateTcpListenerAsync(
-            IFtpConnection connection,
+            IPAddress localAddress,
             int port,
             CancellationToken cancellationToken)
         {
@@ -50,7 +51,7 @@ namespace FubarDev.FtpServer
                 throw new ArgumentOutOfRangeException(nameof(port), "may not be less than 0");
             }
 
-            var pasvOptions = await _addressResolver.GetOptionsAsync(connection, cancellationToken)
+            var pasvOptions = await _addressResolver.GetOptionsAsync(localAddress, cancellationToken)
                .ConfigureAwait(false);
 
             if (port > 0 && pasvOptions.HasPortRange && (port > pasvOptions.PasvMaxPort || port < pasvOptions.PasvMinPort))
@@ -62,11 +63,11 @@ namespace FubarDev.FtpServer
 
             if (port == 0 && pasvOptions.HasPortRange)
             {
-                listener = CreateListenerInRange(connection, pasvOptions);
+                listener = CreateListenerInRange(localAddress, pasvOptions);
             }
             else
             {
-                listener = new PasvListener(connection.LocalEndPoint.Address, port, pasvOptions.PublicAddress);
+                listener = new PasvListener(localAddress, port, pasvOptions.PublicAddress);
             }
 
             return listener;
@@ -79,7 +80,7 @@ namespace FubarDev.FtpServer
         /// <param name="pasvOptions">The options for the <see cref="IPasvListener"/>.</param>
         /// <returns>Configured PasvListener.</returns>
         /// <exception cref="SocketException">When no free port could be found, or other bad things happen. See <see cref="SocketError"/>.</exception>
-        private IPasvListener CreateListenerInRange(IFtpConnection connection, PasvListenerOptions pasvOptions)
+        private IPasvListener CreateListenerInRange([NotNull] IPAddress localAddress, [NotNull] PasvListenerOptions pasvOptions)
         {
             lock (_listenerLock)
             {
@@ -88,7 +89,7 @@ namespace FubarDev.FtpServer
                 {
                     try
                     {
-                        return new PasvListener(connection.LocalEndPoint.Address, port, pasvOptions.PublicAddress);
+                        return new PasvListener(localAddress, port, pasvOptions.PublicAddress);
                     }
                     catch (SocketException se)
                     {

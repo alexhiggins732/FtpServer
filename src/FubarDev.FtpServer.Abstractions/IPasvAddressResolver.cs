@@ -2,6 +2,7 @@
 // Copyright (c) Fubar Development Junker. All rights reserved.
 // </copyright>
 
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,7 +24,7 @@ namespace FubarDev.FtpServer
         [NotNull]
         [ItemNotNull]
         Task<PasvListenerOptions> GetOptionsAsync(
-            [NotNull] IFtpConnection connection,
+            [NotNull] IPAddress localAddress,
             CancellationToken cancellationToken);
     }
 }

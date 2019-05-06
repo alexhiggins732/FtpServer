@@ -21,8 +21,8 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="AdatCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The FTP connection accessor.</param>
-        public AdatCommandHandler([NotNull] IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "ADAT")
+        public AdatCommandHandler([NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "ADAT")
         {
         }
 

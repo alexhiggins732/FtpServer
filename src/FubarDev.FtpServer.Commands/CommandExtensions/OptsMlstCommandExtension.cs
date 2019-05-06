@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using FubarDev.FtpServer.CommandHandlers;
+using FubarDev.FtpServer.Features;
 
 using JetBrains.Annotations;
 
@@ -21,8 +22,9 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// Initializes a new instance of the <see cref="OptsMlstCommandExtension"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
-        public OptsMlstCommandExtension([NotNull] IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "OPTS", "MLST")
+        public OptsMlstCommandExtension(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "OPTS", "MLST")
         {
             // Don't announce this extension, because it gets already announced
             // by the MLST command itself.
@@ -32,18 +34,21 @@ namespace FubarDev.FtpServer.CommandExtensions
         /// <inheritdoc />
         public override void InitializeConnectionData()
         {
-            Connection.Data.ActiveMlstFacts.Clear();
+            IMlstFactsFeature feature = new MlstFactsFeature();
             foreach (var knownFact in MlstCommandHandler.KnownFacts)
             {
-                Connection.Data.ActiveMlstFacts.Add(knownFact);
+                feature.ActivaFacts.Add(knownFact);
             }
+
+            FtpContext.State.Features.Set(feature);
         }
 
         /// <inheritdoc />
         public override Task<IFtpResponse> Process(FtpCommand command, CancellationToken cancellationToken)
         {
+            var feature = FtpContext.State.Features.Get<IMlstFactsFeature>();
             var facts = command.Argument.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-            Connection.Data.ActiveMlstFacts.Clear();
+            feature.ActivaFacts.Clear();
             foreach (var fact in facts)
             {
                 if (!MlstCommandHandler.KnownFacts.Contains(fact))
@@ -51,8 +56,9 @@ namespace FubarDev.FtpServer.CommandExtensions
                     return Task.FromResult<IFtpResponse>(new FtpResponse(501, T("Syntax error in parameters or arguments.")));
                 }
 
-                Connection.Data.ActiveMlstFacts.Add(fact);
+                feature.ActivaFacts.Add(fact);
             }
+
             return Task.FromResult<IFtpResponse>(new FtpResponse(200, T("Command okay.")));
         }
     }

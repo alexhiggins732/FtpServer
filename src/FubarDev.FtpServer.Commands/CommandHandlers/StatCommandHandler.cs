@@ -34,10 +34,10 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// <param name="server">The FTP server.</param>
         /// <param name="backgroundTransferWorker">The background transfer worker service.</param>
         public StatCommandHandler(
-            [NotNull] IFtpConnectionAccessor connectionAccessor,
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
             [NotNull] IFtpServer server,
             [NotNull] IBackgroundTransferWorker backgroundTransferWorker)
-            : base(connectionAccessor, "STAT")
+            : base(ftpContextAccessor, "STAT")
         {
             _server = server;
             _backgroundTransferWorker = backgroundTransferWorker;

@@ -26,9 +26,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
         /// <param name="extensions">All registered extensions.</param>
         public SiteCommandHandler(
-            IFtpConnectionAccessor connectionAccessor,
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
             [NotNull, ItemNotNull] IEnumerable<IFtpCommandHandlerExtension> extensions)
-            : base(connectionAccessor, "SITE")
+            : base(ftpContextAccessor, "SITE")
         {
             _extensions = extensions
                .Where(x => Names.Any(name => string.Equals(name, x.ExtensionFor, StringComparison.OrdinalIgnoreCase)))

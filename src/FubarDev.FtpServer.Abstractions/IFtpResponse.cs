@@ -21,9 +21,9 @@ namespace FubarDev.FtpServer
         int Code { get; }
 
         /// <summary>
-        /// Gets the async action to execute after sending the response to the client.
+        /// Ges a value indicating whether the connection should be paused.
         /// </summary>
-        Func<IFtpConnection, CancellationToken, Task> AfterWriteAction { get; }
+        bool PauseConnection { get; }
 
         /// <summary>
         /// Tries to get the the next line.

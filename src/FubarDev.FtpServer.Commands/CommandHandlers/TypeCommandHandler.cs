@@ -8,6 +8,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using JetBrains.Annotations;
+
 namespace FubarDev.FtpServer.CommandHandlers
 {
     /// <summary>
@@ -19,8 +21,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="TypeCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
-        public TypeCommandHandler(IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "TYPE")
+        public TypeCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "TYPE")
         {
         }
 

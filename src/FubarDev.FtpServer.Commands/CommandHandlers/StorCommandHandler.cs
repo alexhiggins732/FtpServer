@@ -36,10 +36,10 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// <param name="backgroundTransferWorker">The background transfer worker service.</param>
         /// <param name="sslStreamWrapperFactory">An object to handle SSL streams.</param>
         public StorCommandHandler(
-            [NotNull] IFtpConnectionAccessor connectionAccessor,
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
             [NotNull] IBackgroundTransferWorker backgroundTransferWorker,
             [NotNull] ISslStreamWrapperFactory sslStreamWrapperFactory)
-            : base(connectionAccessor, "STOR")
+            : base(ftpContextAccessor, "STOR")
         {
             _backgroundTransferWorker = backgroundTransferWorker;
             _sslStreamWrapperFactory = sslStreamWrapperFactory;

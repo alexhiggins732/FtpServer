@@ -3,6 +3,7 @@
 // </copyright>
 
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,7 +28,7 @@ namespace FubarDev.FtpServer
         }
 
         /// <inheritdoc />
-        public Task<PasvListenerOptions> GetOptionsAsync(IFtpConnection connection, CancellationToken cancellationToken)
+        public Task<PasvListenerOptions> GetOptionsAsync(IPAddress localAddress, CancellationToken cancellationToken)
         {
             var minPort = _options.PasvMinPort ?? 0;
             if (minPort > 0 && minPort < 1024)
@@ -37,7 +38,7 @@ namespace FubarDev.FtpServer
 
             var maxPort = Math.Max(_options.PasvMaxPort ?? 0, minPort);
 
-            var publicAddress = _options.PublicAddress ?? connection.LocalEndPoint.Address;
+            var publicAddress = _options.PublicAddress ?? localAddress;
 
             return Task.FromResult(new PasvListenerOptions(minPort, maxPort, publicAddress));
         }

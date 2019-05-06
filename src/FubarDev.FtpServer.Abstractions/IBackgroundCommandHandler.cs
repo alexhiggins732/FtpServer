@@ -2,6 +2,7 @@
 // Copyright (c) Fubar Development Junker. All rights reserved.
 // </copyright>
 
+using System.Threading;
 using System.Threading.Tasks;
 
 using JetBrains.Annotations;
@@ -21,9 +22,10 @@ namespace FubarDev.FtpServer
         /// </summary>
         /// <param name="handler">The command handler that processes the given <paramref name="command"/>.</param>
         /// <param name="command">The command to process by the <paramref name="handler"/>.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns><code>null</code> when the command could not be processed.</returns>
         [CanBeNull]
-        Task<IFtpResponse> Execute([NotNull] IFtpCommandBase handler, [NotNull] FtpCommand command);
+        Task<IFtpResponse> Execute([NotNull] IFtpCommandBase handler, [NotNull] FtpCommand command, CancellationToken cancellationToken);
 
         /// <summary>
         /// Cancels the processing of the current command.

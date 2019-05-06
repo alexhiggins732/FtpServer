@@ -8,6 +8,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
+using JetBrains.Annotations;
+
 namespace FubarDev.FtpServer
 {
     /// <summary>
@@ -26,7 +28,7 @@ namespace FubarDev.FtpServer
         /// <param name="externalAddress">which external address should be advertised to clients. Use null to use the listener's address.</param>
         /// <exception cref="ArgumentNullException">listenAddress is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">port is out of range.</exception>
-        public PasvListener(IPAddress listenAddress, int port, IPAddress externalAddress)
+        public PasvListener([NotNull] IPAddress listenAddress, int port, IPAddress externalAddress)
         {
             _tcpListener = new TcpListener(listenAddress, port);
             _tcpListener.Start();

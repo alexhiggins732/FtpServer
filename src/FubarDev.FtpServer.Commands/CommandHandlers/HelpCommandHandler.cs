@@ -5,6 +5,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using JetBrains.Annotations;
+
 namespace FubarDev.FtpServer.CommandHandlers
 {
     /// <summary>
@@ -16,8 +18,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="HelpCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
-        public HelpCommandHandler(IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "HELP")
+        public HelpCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "HELP")
         {
         }
 

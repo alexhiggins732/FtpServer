@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 using FubarDev.FtpServer.FileSystem;
 
+using JetBrains.Annotations;
+
 namespace FubarDev.FtpServer.CommandHandlers
 {
     /// <summary>
@@ -21,8 +23,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// Initializes a new instance of the <see cref="PwdCommandHandler"/> class.
         /// </summary>
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
-        public PwdCommandHandler(IFtpConnectionAccessor connectionAccessor)
-            : base(connectionAccessor, "PWD", "XPWD")
+        public PwdCommandHandler(
+            [NotNull] IFtpContextAccessor ftpContextAccessor)
+            : base(ftpContextAccessor, "PWD", "XPWD")
         {
         }
 

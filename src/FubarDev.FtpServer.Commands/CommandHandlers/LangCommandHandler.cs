@@ -33,9 +33,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
         /// <param name="catalogLoader">The catalog loader for the FTP server.</param>
         public LangCommandHandler(
-            [NotNull] IFtpConnectionAccessor connectionAccessor,
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
             [NotNull] IFtpCatalogLoader catalogLoader)
-            : base(connectionAccessor, "LANG")
+            : base(ftpContextAccessor, "LANG")
         {
             _catalogLoader = catalogLoader;
         }

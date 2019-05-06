@@ -34,9 +34,9 @@ namespace FubarDev.FtpServer.CommandHandlers
         /// <param name="connectionAccessor">The accessor to get the connection that is active during the <see cref="Process"/> method execution.</param>
         /// <param name="sslStreamWrapperFactory">An object to handle SSL streams.</param>
         public RetrCommandHandler(
-            [NotNull] IFtpConnectionAccessor connectionAccessor,
+            [NotNull] IFtpContextAccessor ftpContextAccessor,
             [NotNull] ISslStreamWrapperFactory sslStreamWrapperFactory)
-            : base(connectionAccessor, "RETR")
+            : base(ftpContextAccessor, "RETR")
         {
             _sslStreamWrapperFactory = sslStreamWrapperFactory;
         }
