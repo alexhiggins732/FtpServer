@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FubarDev.FtpServer;
@@ -8,7 +10,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 
+
+using FubarDev.FtpServer.AccountManagement;
+
+using FubarDev.FtpServer.FileSystem.GoogleDrive;
+using FubarDev.FtpServer.FileSystem.InMemory;
+
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Drive.v3;
+
+using Microsoft.Extensions.Options;
+
 using NLog.Extensions.Logging;
+using System.Net.Security;
 
 namespace FileSystemFtpServer
 {
@@ -16,90 +30,102 @@ namespace FileSystemFtpServer
     {
         static void Main(string[] args)
         {
-            //Console.WriteLine("Hello World!");
+            Console.WriteLine("Initializing FTP Server...");
             CreateFtpHostBuilder(args).Build().Run();
-            Console.ReadKey();
         }
 
-
-        private static void PromptForExit()
+        public interface IFtpHost
         {
-            
+            void Run();
         }
-
+        public interface IFtpServiceProvider
+        {
+            IServiceProvider ServiceProvider { get; }
+            void Run();
+        }
         public interface IFtpHostBuilder
         {
             IFtpHost Build();
         }
-        public interface IFtpHost
+
+
+        public class FtpServiceProvider : IFtpServiceProvider
         {
-            bool Running { get; }
-            void Run();
-            void Stop();
-        }
-        public class FtpHost : IFtpHost
-        {
-            private IFtpServerHost ftpServerHost;
-            private IServiceProvider serviceProvider;
-            public FtpHost(IServiceProvider serviceProvider)
+            public IServiceProvider ServiceProvider { get; }
+
+
+            public FtpServiceProvider(IServiceProvider serviceProvider)
             {
-                this.serviceProvider = serviceProvider;
-                ftpServerHost = serviceProvider.GetRequiredService<IFtpServerHost>();
+                this.ServiceProvider = serviceProvider;
             }
 
-            public bool Running { get; private set; }
-
-            public void Run()
-            {
-                if (Running) return;
-                ftpServerHost.StartAsync(CancellationToken.None).Wait();
-                //Console.ReadLine();
-                Running = true;
-                Task.Run(() => PromptForExit());
-            }
-
-            private void PromptForExit()
-            {
-                //var fs = serviceProvider.GetRequiredService<DotNetFileSystemOptions>();
-                //var opts = serviceProvider.GetRequiredService<FtpServerOptions>();
-                //Console.WriteLine($"FTP Server started:");
-                //Console.WriteLine($"  -> LISTENING on {opts.ServerAddress}:{opts.Port}");
-                //Console.WriteLine($"  -> PASV: {opts.PasvAddress}:{opts.PasvMinPort}-{opts.PasvMaxPort}");
-                //Console.WriteLine($"  -> ROOT: {fs.RootPath}");
-
-                //Console.WriteLine($"Press any key to exit.");
-                Console.ReadKey();
-                Stop();
-            }
-
-            public void Stop()
-            {
-                if (!Running) return;
-                ftpServerHost.StopAsync(CancellationToken.None).Wait();
-                Running = false;
-            }
+            public void Run() => ServiceProvider.GetRequiredService<IFtpServer>();//.Run();
         }
 
         public class FtpHostBuilder : IFtpHostBuilder
         {
-            private ServiceProvider serviceProvider;
-    
-            public FtpHostBuilder(ServiceProvider serviceProvider)
+            private IServiceCollection services;
+
+            public FtpHostBuilder(IServiceCollection services)
             {
-                this.serviceProvider = serviceProvider;
+                this.services = services;
             }
 
-            public IFtpHost Build()
+            public IFtpHost Build() => new FtpHost(services);
+
+        }
+
+        public class FtpHost : IFtpHost
+        {
+            private IServiceCollection services;
+
+            public FtpHost(IServiceCollection services)
             {
-                //ftpServerHost = serviceProvider.GetRequiredService<IFtpServerHost>();
-                var iFtpHost = serviceProvider.GetRequiredService<IFtpHost>();
-                return iFtpHost;
-                //return new FtpHost(ftpServerHost);
+                this.services = services;
+            }
+
+            public void Run()
+            {
+                Console.WriteLine("Starting FTP Server... Press any key to exit");
+                Task.Run(() => RunAsync(services)).Wait();
+            }
+            private static async Task RunAsync(IServiceCollection services)
+            {
+                using (var serviceProvider = services.BuildServiceProvider())
+                {
+                    var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+                    loggerFactory.AddNLog(new NLogProviderOptions { CaptureMessageTemplates = true, CaptureMessageProperties = true });
+                    NLog.LogManager.LoadConfiguration("NLog.config");
+                    var logger = loggerFactory.CreateLogger<IFtpHost>();
+
+                    var serverOptions = serviceProvider.GetRequiredService<IOptions<FtpServerOptions>>().Value;
+                    logger.LogTrace($"Listening on: {serverOptions.ServerAddress}:{serverOptions.Port}");
+                    var fsOptions = serviceProvider.GetService<IOptions<DotNetFileSystemOptions>>().Value;
+                    logger.LogTrace($"HOME: {fsOptions.RootPath}");
+
+                    try
+                    {
+                        // Start the FTP server
+                        var ftpServerHost = serviceProvider.GetRequiredService<IFtpServerHost>();
+                        await ftpServerHost.StartAsync(CancellationToken.None).ConfigureAwait(false);
+
+                        Console.WriteLine("Press ENTER/RETURN to close the test application.");
+                        Console.ReadLine();
+
+                        // Stop the FTP server
+                        await ftpServerHost.StopAsync(CancellationToken.None).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(ex);
+                    }
+                }
             }
         }
+
         public static IFtpHostBuilder CreateFtpHostBuilder(string[] args)
         {
-            var services = new ServiceCollection();
+            var services = CreateServices(new FtpServerConfigOptions());
 
             // use %TEMP%/TestFtpServer as root folder
             services.Configure<DotNetFileSystemOptions>(opt => opt
@@ -114,26 +140,9 @@ namespace FileSystemFtpServer
 
             // Configure the FTP server
             services.Configure((FubarDev.FtpServer.FtpServerOptions opt) => opt.ServerAddress = "127.0.0.1");
-            services.AddSingleton<IFtpHost>(x => new FtpHost(x));
-            Task.Run(()=>RunAsync(services)).Wait();
-            //return new FtpHostBuilder(services.BuildServiceProvider());
-            //Build the service provider
-            using (var serviceProvider = services.BuildServiceProvider())
-            {
+            return new FtpHostBuilder(services);
 
-                // Initialize the FTP server
-                var ftpServerHost = serviceProvider.GetRequiredService<IFtpServerHost>();
 
-                //// Start the FTP server
-                ftpServerHost.StartAsync(CancellationToken.None).Wait();
-
-                Console.WriteLine("Press ENTER/RETURN to close the test application.");
-                Console.ReadLine();
-
-                //// Stop the FTP server
-                ftpServerHost.StopAsync(CancellationToken.None).Wait();
-            }
-            return new FtpHostBuilder(services.BuildServiceProvider());
         }
 
         private static async Task RunAsync(IServiceCollection services)
@@ -164,7 +173,7 @@ namespace FileSystemFtpServer
         }
 
 
-        private static IServiceCollection CreateServices(FtpServerOptions options)
+        private static IServiceCollection CreateServices(FtpServerConfigOptions options)
         {
             var services = new ServiceCollection()
                 .AddLogging(cfg => cfg.SetMinimumLevel(LogLevel.Trace))
@@ -191,8 +200,8 @@ namespace FileSystemFtpServer
                             opt.PasvMinPort = options.PassivePortRange.Value.Item1;
                             opt.PasvMaxPort = options.PassivePortRange.Value.Item2;
                         }
-                    })
-                .Configure<GoogleDriveOptions>(opt => opt.UseBackgroundUpload = options.UseBackgroundUpload);
+                    });
+            //.Configure<GoogleDriveOptions>(opt => opt.UseBackgroundUpload = options.UseBackgroundUpload);
 
             if (options.ImplicitFtps)
             {
@@ -203,11 +212,11 @@ namespace FileSystemFtpServer
 
                         // Use an implicit SSL connection (without the AUTHTLS command)
                         ftpServer.ConfigureConnection += (s, e) =>
-                        {
-                            var sslStream = new SslStream(e.Connection.OriginalStream);
-                            sslStream.AuthenticateAsServer(authTlsOptions.Value.ServerCertificate);
-                            e.Connection.SocketStream = sslStream;
-                        };
+                    {
+                        var sslStream = new SslStream(e.Connection.OriginalStream);
+                        sslStream.AuthenticateAsServer(authTlsOptions.Value.ServerCertificate);
+                        e.Connection.SocketStream = sslStream;
+                    };
 
                         return ftpServer;
                     });
@@ -222,7 +231,7 @@ namespace FileSystemFtpServer
     }
 
 
-    public class FtpServerOptions
+    public class FtpServerConfigOptions
     {
         /// <summary>
         /// Gets or sets a value indicating whether the help message should be shown.
